@@ -1,0 +1,54 @@
+#tell job to use bash
+#$ -S /bin/bash
+#$ -l m_mem_free=7G #last run took 139.267G RAM and was set to 10G/30
+#$ -pe threads 30
+#$ -j y
+#$ -o $JOB_ID_qsubOut.txt
+#$ -cwd
+#$ -N latest_oliver_EqcGen
+
+#module purge
+#module load EBModules uge SAMtools/1.14-GCC-10.3.0
+#
+#if [[ $# -lt 2 ]]; then
+#	echo "Missing Params. Usage: <bam> <cbfile>"
+#	exit 1
+#fi
+
+BAM="$1"
+BASE=$(basename "${BAM}" \.bam)
+CBFILE=$2
+
+echo
+echo "Started on: $(date)"
+echo
+echo "Job ID $JOB_ID"
+echo
+echo "$(qstat -j $JOB_ID | grep submit_cmd)"
+echo
+echo "Filtering BAM"
+echo
+time samtools view -h -D "CB:${CBFILE}" "${BAM}" | samtools view -b -o "${BASE}_filteredBC.bam" -
+echo 
+
+module purge
+module load EBModules uge BEDTools/2.30.0-GCC-10.3.0 SAMtools/1.14-GCC-10.3.0 Perl/5.32.1-GCCcore-10.3.0
+
+#BASE=$(basename ${1} \.bam)
+
+ScriptDir="./scripts"
+#BAMname=${BASE}_filteredBC.bam
+
+#echo "Assuming filtered BAM input.  If you have not filtered the bam by valid CBs then kill this run and do so first"
+#echo "ONLY running eqcgen, no filtration being applied"
+echo
+echo "Running Generate" 
+echo
+${ScriptDir}/generate_eqc.sh $1 || { echo "ERROR"; exit 1; }
+echo
+echo "Ended on:  $(date)"
+echo
+echo
+echo "Resource Usage"
+echo "$(qstat -j $JOB_ID | grep usage)"
+echo
