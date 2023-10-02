@@ -1,4 +1,5 @@
 # To Build this executable
+Create a build directory inside this current directory and then run cmake according to the commands below.
 ```
 mkdir build
 cd build
