@@ -1,0 +1,52 @@
+#!/bin/bash
+#tell job to use bash
+#$ -S /bin/bash
+#$ -l m_mem_free=6G #My runs use about 200G Talitha had one run use 19G total and one run use 336G total, using 300G for now
+#$ -pe threads 51 
+#$ -j y
+#$ -o $JOB_ID_qsubOut.txt
+#$ -N testEMrun_multiprocess
+#$ -cwd 
+
+#if [[ -z $1 || -z $2 ]]; then
+#        echo -e "Missing an argument - Aborting\n(usage <bfh.txt>  <outdirName>)\n"
+#        exit 1 
+#fi
+#
+if [[ $# -lt 3 ]]; then
+        echo -e "Missing an argument - Aborting\n(usage: <dedup header> <dedup results> <outdirName>)\n"
+        exit 1 
+fi
+
+
+#4/3/23
+#fix python path issues. Issues is pythonpath variable is appended to when loading a python module but it is not cleared when the module is unloaded (module meaning lmod module)
+#Fix is to unset it first.
+unset PYTHONPATH
+#also adding a purge to be safe
+module restore base
+#END Fix
+
+#Python/3.10.4-GCCcore-11.3.0-bare Python/3.10.4-GCCcore-11.3.0
+module load Python/3.10.4-GCCcore-11.3.0 #should be python 3.10.4
+export PYTHONPATH="${PYTHONPATH}:/mnt/grid/mhammell/hpc/data/data/wunderl/software/elzar_python\$py_version_short/lib/python3.10/site-packages/"
+
+exePath=./multiprocess_wrapper_cole.py
+echo
+echo "Started on: $(date)"
+echo
+echo "Job ID $JOB_ID"
+echo
+echo "$(qstat -j $JOB_ID | grep submit_cmd)"
+echo
+echo "Running test version of the multiprocess EM wrapper"
+echo
+echo
+echo
+
+$exePath --res $2 --hed $1 --gen allLength100_combined.tsv --tes ../backup/GRCh38_GENCODE_primaryAssembly_rmsk_TEsubfam.gtf --project $3 --threads 50
+
+echo
+echo "Ended on: $(date)"
+echo
+echo "Usage"; echo; qstat -j $JOB_ID | grep usage;
